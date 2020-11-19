@@ -14,7 +14,11 @@ def main(args: List[str]) -> None:
     with open(filename, "r") as f:
         for line in f:
             # Load board
-            board = Board.from_list(list(map(int, line.split(' '))), (2, 4))
+            data = list(map(int, line.split(' ')))
+            shape = (2, 4)
+            board = Board.from_list(data, shape, None)
+            board = Board.from_list(data, shape, Board.h1)
+            board = Board.from_list(data, shape, Board.h2)
 
 
 if __name__ == '__main__':
