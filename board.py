@@ -1,8 +1,7 @@
 from __future__ import annotations
-import sys
 import numpy as np
 from numpy import ndarray as Array
-from typing import List, Dict, Tuple, Iterable, NamedTuple, Union
+from typing import List, Dict, Tuple, Iterable, NamedTuple, Union, Optional
 
 
 class Point(NamedTuple):
@@ -88,6 +87,7 @@ class Board:
         """
         return any(np.array_equal(self.array, goal) for goal in self.goals)
 
+    # region Move generation
     def generate_moves(self) -> Iterable[State]:
         """
         Generates all possible moves from the current board state
@@ -168,35 +168,17 @@ class Board:
 
         # Create state
         targets[target] = State(cost, board)
+    # endregion
 
+    # region Heuristics
     def h1(self) -> int:
         """
         Heuristic 1 - Hamming Distance
         :return: The value of the heuristic
         """
 
-        # If on a goal state, immediately return 0
-        if self.is_goal:
-            return 0
-
-        h = sys.maxsize
-        for goal in self.goals:
-            # Running total
-            total = 0
-            for index in np.ndindex(goal.shape):
-                i = goal[index]
-                if i == 0:
-                    # Skip zero since it's out "empty" position
-                    continue
-
-                # If the spots do not match, add one
-                if i != self.array[index]:
-                    total += 1
-
-            # Compare to the heuristic to other goal states
-            h = min(h, total)
-
-        return h
+        # Find the lowest heuristic over all goal states, return 0 if a goal state
+        return min(map(self._heuristic_hamming, self.goals)) if not self.is_goal else 0
 
     def h2(self) -> int:
         """
@@ -206,57 +188,81 @@ class Board:
         :return: The value of the heuristic
         """
 
-        # If on a goal state, immediately return 0
-        if self.is_goal:
-            return 0
+        # Find the lowest heuristic over all goal states, return 0 if a goal state
+        return min(map(self._heuristic_manhattan, self.goals)) if not self.is_goal else 0
 
-        h = sys.maxsize
-        for goal in self.goals:
-            # Running total
-            total = 0
-            for index in np.ndindex(goal.shape):
-                i = goal[index]
-                if i == 0:
-                    # Skip zero since it's out "empty" position
-                    continue
+    def _heuristic_hamming(self, goal: Array) -> int:
+        """
+        Hamming Distance heuristic
+        :param goal: Goal state the calculate the heuristic from
+        :return: The Hamming Distance from the given goal state
+        """
 
-                g = Point(index)
-                t = self._find_point(self.array, i)
-                x, y = Point.manhattan_distance(g, t)
-                # Take care of wrapping
-                wraps = 0
-                if x > self.height // 2:
-                    x = self.height - x
-                    wraps = 1
-                if y > self.width // 2:
-                    y = self.width - y
-                    wraps = 1
-                # Make sure we don't add two wrapping penalties
-                total += x + y + wraps
+        # Running total
+        total = 0
+        for index in np.ndindex(goal.shape):
+            i = goal[index]
+            if i == 0:
+                # Skip zero since it's out "empty" position
+                continue
 
-            # Compare to the heuristic to other goal states
-            h = min(h, total)
+            # If the spots do not match, add one
+            if i != self.array[index]:
+                total += 1
+        return total
 
-        return h
+    def _heuristic_manhattan(self, goal: Array) -> int:
+        """
+        Manhattan Distance heuristic
+        :param goal: Goal state the calculate the heuristic from
+        :return: The Manhattan Distance from the given goal state
+        """
 
+        # Running total
+        total = 0
+        for index in np.ndindex(goal.shape):
+            i = goal[index]
+            if i == 0:
+                # Skip zero since it's out "empty" position
+                continue
+
+            g = Point(index)
+            t = self._find_point(self.array, i)
+            x, y = Point.manhattan_distance(g, t)
+            # Take care of wrapping
+            wraps = 0
+            if x > self.height // 2:
+                x = self.height - x
+                wraps = 1
+            if y > self.width // 2:
+                y = self.width - y
+                wraps = 1
+            # Make sure we don't add two wrapping penalties
+            total += x + y + wraps
+        return total
+    # endregion
+
+    # region Static methods
     @staticmethod
     def _find_point(array: Array, value: int) -> Point:
         return Point(*np.asarray(np.where(array == value)).T[0])
 
     @staticmethod
-    def from_list(data: List[int], shape: Tuple[int, int]) -> Board:
+    def from_list(data: List[int], shape: Tuple[int, int], dtype: Optional[object] = np.int16) -> Board:
         """
         Creates a new board from a list and a specified size
         :param data:  List to create the board from
         :param shape: Shape of the board (height, width)
+        :param dtype: Type used within the Numpy arrays
         :return: The created board
         """
 
         # Create the board array
-        array: Array = np.array(data, dtype=np.int16).reshape(shape)
+        array: Array = np.array(data, dtype=dtype).reshape(shape)
         # Find the location of the zero
         zero = Board._find_point(array, 0)
         # Create both solution boards
-        g1: Array = np.roll(np.arange(array.size, dtype=np.int16), -1).reshape(array.shape)
-        g2: Array = g1.T.reshape(array.shape, order='F')
+        g1: Array = np.roll(np.arange(array.size, dtype=dtype), -1).reshape(shape)
+        g2: Array = g1.T.reshape(shape, order='F')
         return Board(array, zero, (g1, g2))
+    # endregion
