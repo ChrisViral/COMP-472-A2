@@ -1,9 +1,9 @@
+https://github.com/ChrisViral/COMP-472-A2
+
 # COMP-472 F Fall '20 Assignment 2
 November 18th, 2020
 Christophe Savard, 40017812
 TeamViral
-
-Github link: https://github.com/ChrisViral/COMP-472-A2
 
 Required packages: numpy
 Python version: 3.8.5
