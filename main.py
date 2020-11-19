@@ -58,12 +58,10 @@ def main(args: List[str]) -> None:
     gbfs_h2 = Stats()
     astar_h1 = Stats()
     astar_h2 = Stats()
-    with open(results_directory + "randomPuzzles.txt", "w") as f:
-        data = [1, 2, 3, 4, 5, 6, 7, 0]
-        for i in range(50):
-            print(f"Writing random puzzle {i}")
-            random.shuffle(data)
-            f.write(" ".join(map(str, data)) + "\n")
+    with open(results_directory + "randomPuzzles.txt", "r") as f:
+        for i, line in enumerate(f):
+            print(f"Calculating random puzzle {i}")
+            data = list(map(int, line.split(' ')))
 
             # Uniform Cost Search
             board = Board.from_list(data, shape)
