@@ -171,20 +171,33 @@ class Board:
     # endregion
 
     # region Heuristics
-    def h1(self) -> int:
+    @staticmethod
+    def h0(self: Board) -> int:
+        """
+        Heuristic 0 - A naive heuristic base one the position of 0
+        :param self: The board to calculate the heuristic for
+        :return: The value of the heuristic
+        """
+        return 0 if self.array[(self.height - 1, self.width - 1)] == 0 else 1
+
+    @staticmethod
+    def h1(self: Board) -> int:
         """
         Heuristic 1 - Hamming Distance
+        :param self: The board to calculate the heuristic for
         :return: The value of the heuristic
         """
 
         # Find the lowest heuristic over all goal states, return 0 if a goal state
         return min(map(self._heuristic_hamming, self.goals)) if not self.is_goal else 0
 
-    def h2(self) -> int:
+    @staticmethod
+    def h2(self: Board) -> int:
         """
         Heuristic 2 - Wrapped Manhattan Distance
         We are using regular Manhattan Distance, and accounting for wraps.
         If a wrap is the shorter path, one is also added to account for the more expensive move.
+        :param self: The board to calculate the heuristic for
         :return: The value of the heuristic
         """
 
