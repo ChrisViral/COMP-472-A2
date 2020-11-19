@@ -1,0 +1,5 @@
+Total solution length: 156
+Total search length: 882
+Total failures: 0
+Total cost: 205
+Total time: 2.7024731636047363

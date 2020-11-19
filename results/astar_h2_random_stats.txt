@@ -1,0 +1,10 @@
+Total solution length: 569
+Average solution length: 11.38
+Total search length: 3959
+Average search length: 79.18
+Total failures: 0
+Average failures: 0.0
+Total cost: 642
+Average cost: 12.84
+Total time: 5.079061508178711
+Average time: 0.10158123016357422

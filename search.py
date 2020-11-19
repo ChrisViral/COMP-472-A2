@@ -1,4 +1,4 @@
-import sys
+import time
 from queue import PriorityQueue
 from board import Board, State
 from typing import List, Tuple, Dict, NamedTuple, Optional
@@ -16,12 +16,15 @@ class SearchTrace(NamedTuple):
     state: str
 
 
-def search(board: Board) -> Optional[Tuple[SearchResult, List[SearchTrace]]]:
+def search(board: Board, timeout: float = 60.0) -> Tuple[Optional[float], Optional[Tuple[SearchResult, List[SearchTrace]]]]:
     """
     Search through the board using a PriorityQueue as an open list
-    :param board: Starting state board
+    :param board:   Starting state board
+    :param timeout: If the search times out after 60 seconds
     :return: A tuple containing
     """
+
+    start = time.time()
     opened: PriorityQueue[Board] = PriorityQueue()
     closed: Dict[Board, Board] = {}
     path: List[SearchTrace] = []
@@ -29,12 +32,15 @@ def search(board: Board) -> Optional[Tuple[SearchResult, List[SearchTrace]]]:
     opened.put(board)
 
     while not opened.empty():
+        if timeout and time.time() - start > timeout:
+            return time.time() - start, None
+
         board = opened.get()
         path.append(SearchTrace(board.f, board.g, board.h, str(board)))
 
         # When goal found
         if board.is_goal:
-            return get_answer(board), path
+            return time.time() - start, (get_answer(board), path)
 
         # Skip if already visited at lower cost
         if board in closed and closed[board].g < board.g:
@@ -56,29 +62,12 @@ def search(board: Board) -> Optional[Tuple[SearchResult, List[SearchTrace]]]:
             # Add to open list
             opened.put(child)
 
-    return None
-
-
-def search_gbfs(board: Board) -> Optional[Tuple[SearchResult, List[SearchTrace]]]:
-
-    path: List[SearchTrace] = []
-    while not board.is_goal:
-        path.append(SearchTrace(0, 0, board.h, str(board)))
-        best = sys.maxsize
-        chosen: Optional[Board] = None
-        for _, _, child in board.generate_moves():
-            if child.h < best:
-                best = child.h
-                chosen = child
-
-        board = chosen
-
-    return get_answer(board), path
+    return None, None
 
 
 def get_answer(board: Board) -> SearchResult:
     cost = board.g
-    path: List[State] = []
+    path: List[State] = [State(0, 0, board)]
     while board.parent is not None:
         path.append(board.parent)
         board = board.parent.board

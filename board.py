@@ -67,7 +67,7 @@ class Board:
     Chi-Puzzle board
     """
 
-    def __init__(self, array: Array, zero: Point, goals: Tuple[Array, ...], heuristic: Optional[Callable[[Board], int]], cost: int = 0, parent: Optional[State] = None) -> None:
+    def __init__(self, array: Array, zero: Point, goals: Tuple[Array, ...], heuristic: Optional[Callable[[Board], int]], sort_g: bool, cost: int = 0, parent: Optional[State] = None) -> None:
         """
         Creates a new board with the specified parameters
         :param array:     Board array
@@ -85,14 +85,15 @@ class Board:
         self.zero = zero
         self.goals = goals
         self._heuristic = heuristic
+        self._sort_g = sort_g
         self.g = cost
         self.parent = parent
         self._hash: Optional[int] = None
-
-        # Calculate heuristic and goal
-        self.h = heuristic(self) if heuristic is not None else 0
-        self.f = self.g + self.h
         self.is_goal = any(np.array_equal(self.array, goal) for goal in self.goals)
+
+        # Calculate heuristic
+        self.h = heuristic(self) if heuristic is not None else 0
+        self.f = self.g + self.h if self._sort_g else self.h
 
     # region Ordering
     def __hash__(self) -> int:
@@ -107,7 +108,7 @@ class Board:
         return self.f < other.f
 
     def __str__(self) -> str:
-        return ' '.join(map(str, self.array.flat))
+        return " ".join(map(str, self.array.flat))
     # endregion
 
     # region Move generation
@@ -180,7 +181,7 @@ class Board:
             t = a[target]
             a[self.zero], a[target] = t, a[self.zero]
 
-            board = Board(a, target, self.goals, self._heuristic, self.g + cost, State(cost, t, self))
+            board = Board(a, target, self.goals, self._heuristic, self._sort_g, self.g + cost, State(cost, t, self))
         else:
             # Check if we have a lower cost
             state = targets[target]
@@ -265,7 +266,7 @@ class Board:
                 # Skip zero since it's out "empty" position
                 continue
 
-            g = Point(index)
+            g = Point(*index)
             t = self._find_point(self.array, i)
             x, y = Point.manhattan_distance(g, t)
             # Take care of wrapping
@@ -287,12 +288,13 @@ class Board:
         return Point(*np.asarray(np.where(array == value)).T[0])
 
     @staticmethod
-    def from_list(data: List[int], shape: Tuple[int, int], heuristic: Optional[Callable[[Board], int]], dtype: Optional[object] = np.int16) -> Board:
+    def from_list(data: List[int], shape: Tuple[int, int], heuristic: Optional[Callable[[Board], int]] = None, sort_g: bool = True, dtype: Optional[object] = np.int16) -> Board:
         """
         Creates a new board from a list and a specified size
         :param data:      List to create the board from
         :param shape:     Shape of the board (height, width)
         :param heuristic: Heuristic function
+        :param sort_g:    If the sorting should account g(n)
         :param dtype:     Type used within the Numpy arrays
         :return: The created board
         """
@@ -304,5 +306,5 @@ class Board:
         # Create both solution boards
         g1: Array = np.roll(np.arange(array.size, dtype=dtype), -1).reshape(shape)
         g2: Array = g1.T.reshape(shape, order='F')
-        return Board(array, zero, (g1, g2), heuristic)
+        return Board(array, zero, (g1, g2), heuristic, sort_g)
     # endregion

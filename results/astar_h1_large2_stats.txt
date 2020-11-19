@@ -1,0 +1,5 @@
+Total solution length: 0
+Total search length: 0
+Total failures: 1
+Total cost: 0
+Total time: 180.0
